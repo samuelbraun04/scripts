@@ -60,9 +60,12 @@ def main(number_of_videos, search_queries, download_videos):
             os.remove(file_path)
 
     #Main loop for each search query
-    for counter in search_queries:
-        print("Getting YouTube videos....")
-        driver.get(f"https://www.youtube.com/results?search_query={counter}")
+    for search_query in search_queries:
+
+        video_metadata = []
+
+        print("Getting YouTube videos for search query "+search_query+"....")
+        driver.get(f"https://www.youtube.com/results?search_query={search_query}")
 
         videos = []
         while len(videos) < number_of_videos:
@@ -87,6 +90,7 @@ def main(number_of_videos, search_queries, download_videos):
             else:
                 yt = YouTube(video_link)
                 title = sanitize_filename(yt.title) + '.mp3'
+                video_metadata.append([title, yt.title, video_link])
                 ys = yt.streams.get_audio_only()
                 ys.download(os.getcwd() + '\\audios', filename=title)
                 print(f"File size: {ys.filesize_mb} MB")
@@ -123,8 +127,23 @@ def main(number_of_videos, search_queries, download_videos):
 
             #Save the summarized transcript
             with open(os.getcwd() + '\\summarized transcripts\\' + filename[:-4] + '.txt', 'w') as file:
-                file.write(summarized_transcript)
+                for video in video_metadata:
+                    if filename == video[0]:
+                        file.write("Video Title: "+video[1]+"\n\nVideo URL: "+video[2]+"\n\nSummarized Transcript:\n\n\t"+summarized_transcript+"\n\nFull Transcript:\n\n\t"+transcript['text'])
             print("Created "+filename+" summarized transcript at "+os.getcwd() + '\\summarized transcripts\\' + filename[:-4] + '.txt\n')
+        
+        #Remove old audio files
+        print("Cleaning directories....")
+        for filename in os.listdir(os.getcwd() + '\\audios'):
+            file_path = os.path.join(os.getcwd() + '\\audios', filename)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+
+        #Remove old summarized transcripts
+        for filename in os.listdir(os.getcwd() + '\\summarized transcripts'):
+            file_path = os.path.join(os.getcwd() + '\\summarized transcripts', filename)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
             
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Download and transcribe YouTube videos.')
